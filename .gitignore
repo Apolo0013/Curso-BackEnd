@@ -1,0 +1,34 @@
+# Build
+bin/
+obj/
+out/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# Logs
+*.log
+
+# Publish
+publish/
+*.Publish.xml
+
+# Configs locais (segredos)
+appsettings.Development.json
+appsettings.Local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# arquivo python e javascript
+*.js
+*.py
