@@ -4,3 +4,8 @@ node_modules/
 
 #Build
 
+
+/src/generated/prisma
+
+#dotenv files
+.env
