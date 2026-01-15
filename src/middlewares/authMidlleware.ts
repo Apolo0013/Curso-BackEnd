@@ -12,6 +12,7 @@ import jwt from "jsonwebtoken";
 interface TokenPayload {
   id: number;      // ID do usuário no banco de dados
   email: string;   // Email do usuário autenticado
+  role: "ADMIN" | "USER"; // Papel do usuário na aplicação
   iat: number;     // Timestamp de quando o token foi gerado
   exp: number;     // Timestamp de quando o token expira
 }
@@ -50,10 +51,11 @@ export function authMiddleware(
     // Anexa os dados do usuário à requisição.
     // Isso permite que as rotas protegidas saibam
     // qual usuário está fazendo a requisição.
-    req.user = {
-      id: decoded.id,
-      email: decoded.email,
-    };
+ req.user = {
+  id: decoded.id,
+  email: decoded.email,
+  role: decoded.role,
+};
 
     // Permite que a requisição continue para a próxima rota ou middleware.
     return next();

@@ -10,7 +10,7 @@ import { authMiddleware } from "../middlewares/authMidlleware";
 
 import { validateEmailMiddleware } from "../middlewares/validateEmailMiddleware";
 
-import {UserController} from "../controllers/UserController";
+
 // Cria uma nova instância do Router.
 const router = Router();
 
