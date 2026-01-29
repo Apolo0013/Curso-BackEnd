@@ -4,14 +4,14 @@ namespace BackEnd.DTO.Auth
     public class LoginDTO
     {
         public string Email { set; get; } = "";
-        public string Senha { set; get; } = "";
+        public string Password { set; get; } = "";
     }
 
     //auth/registrar receber
     public class RegistrarDTO
     {
-        public string Nome { set; get; } = "";
+        public string Name { set; get; } = "";
         public string Email { set; get; } = "";
-        public string Senha { set; get; } = "";
+        public string Password { set; get; } = "";
     }
 }

@@ -1,20 +1,32 @@
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.IdentityModel.JsonWebTokens; 
 using System.Text;
 //Service
 using BackEnd.Service.Auth;
+using BackEnd.Service.Course;
 //Repositorie / Data
-using BackEnd.Data.User;
-using System.Text.Json;
+using BackEnd.Data.Context;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 string key = builder.Configuration["Jwt:secret"]!;
+//Registrar Banco de dados
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseNpgsql(
+            builder.Configuration.GetConnectionString("Default")
+        );
+});
 
-//Registrar os meu service
+//Registrar Instancias
+//Service
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<UserRepo>();
+builder.Services.AddScoped<CourseService>();
+//Repositories
+//builder.Services.AddScoped<UserRepo>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -68,7 +80,7 @@ builder.Services.AddCors(opt =>
     opt.AddPolicy("FrontPolicy", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5182")
+            .WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

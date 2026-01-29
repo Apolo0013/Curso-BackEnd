@@ -9,14 +9,12 @@ using Microsoft.AspNetCore.Authorization;
 //DTO
 using BackEnd.DTO.Auth;
 //Model
-using BackEnd.Model.User;
+using BackEnd.Model.Auth;
 //Service
 using BackEnd.Service.Auth;
 //Common
 using BackEnd.Common.ErrorMSGAuth;
 using BackEnd.Common.SucessoMSGAuth;
-using System.Text.Json;
-
 
 [ApiController]
 [Route("auth")]
@@ -33,53 +31,96 @@ public class AuthController : ControllerBase
     }
 
     //Rota para receber o login
-    [HttpPost("Login")]
+    [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDTO login)
     {
         //buscando o usuario
         var result = await _service.CheckLoginUser(login);
         if (result.msg == ErrorMSGAuth.ERROR_USER_NOFIND) // se ele nao estive registrado.
-            return BadRequest("Usuario nao entrado");
+            return BadRequest(new ReturnAuthModel()
+            {
+                Code = ErrorMSGAuth.ERROR_USER_NOFIND,
+                Sucesso = false
+            });
         //Configura o Jwt Token os cambal do cookie
         var user = await _service.GetUserIndex(result.index);
-        string jwt = await JwtGerar(user);
+        //string jwt = await JwtGerar(user);
         //Coloca no cookie
-        await CookieAppend(jwt);
-        return Ok("Logado com Sucesso");
+        //await CookieAppend(jwt);
+        return Ok(new ReturnAuthModel()
+        {
+            Code = SucessoMSGAuth.CONTA_AUTENTICADA_LOGIN,
+            Sucesso = true
+        });
     }
-
 
     //Registrar o usuario
-    [HttpPost("Registrar")]
+    [HttpPost("registrar")]
     public async Task<IActionResult> Registrar([FromBody] RegistrarDTO dados)
     {
-        
-        return Ok();
+        var result = await _service.AuthRegister(dados);
+        if (result.msg == ErrorMSGAuth.ERROR_EMAIL_EM_USO)
+            return BadRequest(new ReturnAuthModel
+            {
+                Code = ErrorMSGAuth.ERROR_EMAIL_EM_USO,
+                Sucesso = false
+            });
+        else if (result.msg == ErrorMSGAuth.ERROR_NOME_EM_USO)
+            return BadRequest(new ReturnAuthModel()
+            {
+                Code = ErrorMSGAuth.ERROR_NOME_EM_USO,
+                Sucesso = false
+            });
+        else // se ele chegou aqui, pq foi registrado...
+        {
+            // pegando o usuario    
+            var user = await _service.GetUserID(result.id);
+            if (user == null)
+                return BadRequest(new ReturnAuthModel
+                {
+                    Code = ErrorMSGAuth.ERROR_INTERNO_SISTEMA,
+                    Sucesso = false
+                });
+            // !Garantia que vai registrar e estara logado
+            // add ele no cookie e jwt
+            //string jwt = await JwtGerar(user); // gerar
+            //await CookieAppend(jwt); // e salvar no token
+            return Ok(new ReturnAuthModel()
+            {
+                Code = SucessoMSGAuth.CONTA_REGISTRADA,
+                Sucesso = true
+            });
+        }
     }
 
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "ADMIN")]
-    [HttpGet("ADMIN")]
-    public async Task<IActionResult> ADMIN()
+    [Authorize]
+    [HttpGet("Me")]
+    public async Task<IActionResult> GetMe()
     {
-        string? ID = User.FindFirst("ID")!.Value;
-        var user = await _service.GetUserID(ID);
-        Console.WriteLine($"Nome: {user.Nome}");
-        Console.WriteLine("SO ADM ACESSA AQUI");
-        return Ok();
-    }
-
-    [Authorize(
-        AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme,
-        Roles = "USER"
-    )]
-    [HttpGet("USER")]
-    public async Task<IActionResult> USER()
-    {
-        string? ID = User.FindFirst("ID")!.Value;
-        var user = await _service.GetUserID(ID);
-        Console.WriteLine($"Nome: {user.Nome}");
-        Console.WriteLine("SO USER e ADMIN ACESSA AQUI");
-        return Ok();
+        //Pegando o ID dentro do cookie.
+        string? id = User.FindFirst("ID")?.Value;
+        if (id != null)
+        {
+            var user = await _service.GetUserID(id); //buscando o usuario no banco de dados
+            if (user == null) // se for null ou seja, algo deu errado em busca o usuario. Algo que nao deveria acontece
+                return BadRequest(new ReturnAuthModel()
+                {
+                    Code = ErrorMSGAuth.ERROR_INTERNO_SISTEMA,
+                    Sucesso = false
+                });
+            else // senao deu certo vamos retorna o usuario normalmente
+                return Ok(new TUser()
+                {
+                    ID = id,
+                    Nome = user.Name,
+                    Role = user.Role
+                });
+        }
+        else return BadRequest(new ReturnAuthModel()
+        {
+            Code = ErrorMSGAuth.ERROR_INTERNO_SISTEMA,      
+            Sucesso = false
+        });
     }
 
 

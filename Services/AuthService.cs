@@ -3,53 +3,62 @@ using BackEnd.Data.User;
 //DTO
 using BackEnd.DTO.Auth;
 //Model
-using BackEnd.Model.User;
+using BackEnd.Model.Auth;
 //Common
 using BackEnd.Common.ErrorMSGAuth;
 using BackEnd.Common.SucessoMSGAuth;
-using System.Diagnostics.Eventing.Reader;
-using System.Data;
+using BackEnd.Data.Context;
 
 namespace BackEnd.Service.Auth
 {
     public class AuthService
     {
-        private readonly UserRepo _repoUser;
+        private readonly AppDbContext _db;
 
-        public AuthService(UserRepo repo)
+        public AuthService(AppDbContext db)
         {
-            _repoUser = repo;
+            _db = db;
         }
 
         //Metedo responsavel por Registrar o usuario.
-        public async Task<string> AuthRegister(RegistrarDTO authdate)
+        public async Task<(string msg, string id)> AuthRegister(RegistrarDTO authdate)
         {
-            var dados = await _repoUser.ReadDB();
+            var dados = _db.Users;
             //se existi pessoa com o mesmo email.
             if (dados.Any(info => info.Email == authdate.Email))
-                return ErrorMSGAuth.ERROR_EMAIL_EM_USO;
-            else if (dados.Any(info => info.Nome == authdate.Nome))
-                return ErrorMSGAuth.ERROR_EMAIL_EM_USO;
+                return (ErrorMSGAuth.ERROR_EMAIL_EM_USO, "");
+            else if (dados.Any(info => info.Name == authdate.Name))
+                return (ErrorMSGAuth.ERROR_NOME_EM_USO, "");
             else // nenhum dados repetido...
             {
-                return "";
+                string ID = Guid.NewGuid().ToString("N");
+                var user = new UserModel()
+                {
+                    Email = authdate.Email,
+                    Name = authdate.Name,
+                    Password = authdate.Password,
+                    ID = ID,
+                    Role = "USER" // por padrao geral sera USER
+                };
+                //registra no banco de dados
+                _db.Add(user);
+                await _db.SaveChangesAsync();
+                return (SucessoMSGAuth.CONTA_REGISTRADA, ID);
             }
         }
 
         public async Task<UserModel?> GetUserID(string ID)
         {
-            var dados = await _repoUser.ReadDB(); // dados
+            var dados = _db.Users; // dados
             // index do usuario de acordo com ID
-            int indexUser = dados.FindIndex(info => info.ID == ID);
-            return indexUser == -1
-                ? null // esse usuario nao existi 
-                : dados[indexUser]; // retorna o usuario.
+            var User = dados.FirstOrDefault(info => info.ID == ID);
+            return User;
         }
 
         public async Task<UserModel?> GetUserIndex(int index)
         //essa funcao vai retorna as informacao de um usuario atraves do index
         {
-            var dados = await _repoUser.ReadDB();
+            var dados = _db.Users.ToList();
             if (index < 0 || index >= dados.Count) return null;
             return dados[index];
         }
@@ -60,22 +69,14 @@ namespace BackEnd.Service.Auth
         // email errado
         // usuario nao encontrado.
         {
-            var dados = await _repoUser.ReadDB();
+            var dados = _db.Users.ToList();
             int indexUser = dados.FindIndex(info =>
-                info.Email == login.Email && // email é igual
-                info.Senha == login.Senha    // senha tambem é igual
+                info.Email == login.Email &&    // email é igual
+                info.Password == login.Password // senha tambem é igual
             );          
             return indexUser != -1
                 ? (SucessoMSGAuth.CONTA_ENCONTRADA, indexUser) // deu certo
                 : (ErrorMSGAuth.ERROR_USER_NOFIND, 0); // nao deu certo
-        }
-
-        public async Task<bool> UserExits(string id)
-        //Vai retorna volor bool se o usuario existi no banco de dados ou nao.
-        {
-            var dadosUser = await _repoUser.ReadDB(); // lendo o banco de dados
-            bool find = dadosUser.Any(info => info.ID == id); // true se ele o id exist no banco de dados/json
-            return find; //retornando o resultado
         }
     }
 }
