@@ -1,6 +1,6 @@
-namespace BackEnd.Common.SucessoMSGAuth
+namespace BackEnd.Common.Auth.Sucesso
 {
-    public static class SucessoMSGAuth
+    public static class SucessoAuth
     {
         //Quando a conta é encontrado.
         public const string CONTA_ENCONTRADA = "CONTA_ENCONTRADA";

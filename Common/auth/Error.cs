@@ -1,6 +1,6 @@
 
-namespace BackEnd.Common.ErrorMSGAuth;
-public static class ErrorMSGAuth
+namespace BackEnd.Common.Auth.Error;
+public static class ErrorAuth
 {
     //Error: quando o email estive errado
     public const string ERROR_EMAIL_EM_USO = "ERROR_EMAIL_EM_USO";

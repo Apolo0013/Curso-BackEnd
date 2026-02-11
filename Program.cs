@@ -1,7 +1,8 @@
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.IdentityModel.JsonWebTokens; 
+using Microsoft.IdentityModel.JsonWebTokens;
+using AutoMapper;
 using System.Text;
 //Service
 using BackEnd.Service.Auth;
@@ -9,10 +10,13 @@ using BackEnd.Service.Course;
 //Repositorie / Data
 using BackEnd.Data.Context;
 using Microsoft.EntityFrameworkCore;
+//Profiles
+using BackEnd.Profiles;
 
 var builder = WebApplication.CreateBuilder(args);
 
 string key = builder.Configuration["Jwt:secret"]!;
+
 //Registrar Banco de dados
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -20,6 +24,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             builder.Configuration.GetConnectionString("Default")
         );
 });
+
 
 //Registrar Instancias
 //Service

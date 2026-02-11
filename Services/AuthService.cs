@@ -1,13 +1,13 @@
-//Data
-using BackEnd.Data.User;
 //DTO
 using BackEnd.DTO.Auth;
 //Model
 using BackEnd.Model.Auth;
 //Common
-using BackEnd.Common.ErrorMSGAuth;
-using BackEnd.Common.SucessoMSGAuth;
+using BackEnd.Common.Auth.Error;
+using BackEnd.Common.Auth.Sucesso;
 using BackEnd.Data.Context;
+using AutoMapper;
+using System.Text.Json;
 
 namespace BackEnd.Service.Auth
 {
@@ -26,9 +26,9 @@ namespace BackEnd.Service.Auth
             var dados = _db.Users;
             //se existi pessoa com o mesmo email.
             if (dados.Any(info => info.Email == authdate.Email))
-                return (ErrorMSGAuth.ERROR_EMAIL_EM_USO, "");
+                return (ErrorAuth.ERROR_EMAIL_EM_USO, "");
             else if (dados.Any(info => info.Name == authdate.Name))
-                return (ErrorMSGAuth.ERROR_NOME_EM_USO, "");
+                return (ErrorAuth.ERROR_NOME_EM_USO, "");
             else // nenhum dados repetido...
             {
                 string ID = Guid.NewGuid().ToString("N");
@@ -43,7 +43,7 @@ namespace BackEnd.Service.Auth
                 //registra no banco de dados
                 _db.Add(user);
                 await _db.SaveChangesAsync();
-                return (SucessoMSGAuth.CONTA_REGISTRADA, ID);
+                return (SucessoAuth.CONTA_REGISTRADA, ID);
             }
         }
 
@@ -52,7 +52,21 @@ namespace BackEnd.Service.Auth
             var dados = _db.Users; // dados
             // index do usuario de acordo com ID
             var User = dados.FirstOrDefault(info => info.ID == ID);
-            return User;
+            if (User == null) return null;
+            else
+            {
+                //convertendo DbUser para UserModel.
+                var userModel = new UserModel()
+                {
+                    Email = User.Email,
+                    Password = User.Password,
+                    Name = User.Name,
+                    ID = User.ID,
+                    Role = User.Role
+                };
+                return userModel;
+            }
+            
         }
 
         public async Task<UserModel?> GetUserIndex(int index)
@@ -60,7 +74,15 @@ namespace BackEnd.Service.Auth
         {
             var dados = _db.Users.ToList();
             if (index < 0 || index >= dados.Count) return null;
-            return dados[index];
+            var User = dados[index]; // pegando ousuario
+            return new UserModel() // colocando para dbUser -> UserModel
+            {
+                Email = User.Email,
+                Password = User.Password,
+                Name = User.Name,
+                ID = User.ID,
+                Role = User.Role
+            };
         }
 
         public async Task<(string msg, int index)> CheckLoginUser(LoginDTO login)
@@ -75,8 +97,8 @@ namespace BackEnd.Service.Auth
                 info.Password == login.Password // senha tambem é igual
             );          
             return indexUser != -1
-                ? (SucessoMSGAuth.CONTA_ENCONTRADA, indexUser) // deu certo
-                : (ErrorMSGAuth.ERROR_USER_NOFIND, 0); // nao deu certo
+                ? (SucessoAuth.CONTA_ENCONTRADA, indexUser) // deu certo
+                : (ErrorAuth.ERROR_USER_NOFIND, 0); // nao deu certo
         }
     }
 }

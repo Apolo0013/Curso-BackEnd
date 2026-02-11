@@ -13,8 +13,8 @@ using BackEnd.Model.Auth;
 //Service
 using BackEnd.Service.Auth;
 //Common
-using BackEnd.Common.ErrorMSGAuth;
-using BackEnd.Common.SucessoMSGAuth;
+using BackEnd.Common.Auth.Error;
+using BackEnd.Common.Auth.Sucesso;
 
 [ApiController]
 [Route("auth")]
@@ -36,10 +36,10 @@ public class AuthController : ControllerBase
     {
         //buscando o usuario
         var result = await _service.CheckLoginUser(login);
-        if (result.msg == ErrorMSGAuth.ERROR_USER_NOFIND) // se ele nao estive registrado.
+        if (result.msg == ErrorAuth.ERROR_USER_NOFIND) // se ele nao estive registrado.
             return BadRequest(new ReturnAuthModel()
             {
-                Code = ErrorMSGAuth.ERROR_USER_NOFIND,
+                Code = ErrorAuth.ERROR_USER_NOFIND,
                 Sucesso = false
             });
         //Configura o Jwt Token os cambal do cookie
@@ -49,7 +49,7 @@ public class AuthController : ControllerBase
         //await CookieAppend(jwt);
         return Ok(new ReturnAuthModel()
         {
-            Code = SucessoMSGAuth.CONTA_AUTENTICADA_LOGIN,
+            Code = SucessoAuth.CONTA_AUTENTICADA_LOGIN,
             Sucesso = true
         });
     }
@@ -59,16 +59,16 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Registrar([FromBody] RegistrarDTO dados)
     {
         var result = await _service.AuthRegister(dados);
-        if (result.msg == ErrorMSGAuth.ERROR_EMAIL_EM_USO)
+        if (result.msg == ErrorAuth.ERROR_EMAIL_EM_USO)
             return BadRequest(new ReturnAuthModel
             {
-                Code = ErrorMSGAuth.ERROR_EMAIL_EM_USO,
+                Code = ErrorAuth.ERROR_EMAIL_EM_USO,
                 Sucesso = false
             });
-        else if (result.msg == ErrorMSGAuth.ERROR_NOME_EM_USO)
+        else if (result.msg == ErrorAuth.ERROR_NOME_EM_USO)
             return BadRequest(new ReturnAuthModel()
             {
-                Code = ErrorMSGAuth.ERROR_NOME_EM_USO,
+                Code = ErrorAuth.ERROR_NOME_EM_USO,
                 Sucesso = false
             });
         else // se ele chegou aqui, pq foi registrado...
@@ -78,7 +78,7 @@ public class AuthController : ControllerBase
             if (user == null)
                 return BadRequest(new ReturnAuthModel
                 {
-                    Code = ErrorMSGAuth.ERROR_INTERNO_SISTEMA,
+                    Code = ErrorAuth.ERROR_INTERNO_SISTEMA,
                     Sucesso = false
                 });
             // !Garantia que vai registrar e estara logado
@@ -87,7 +87,7 @@ public class AuthController : ControllerBase
             //await CookieAppend(jwt); // e salvar no token
             return Ok(new ReturnAuthModel()
             {
-                Code = SucessoMSGAuth.CONTA_REGISTRADA,
+                Code = SucessoAuth.CONTA_REGISTRADA,
                 Sucesso = true
             });
         }
@@ -105,7 +105,7 @@ public class AuthController : ControllerBase
             if (user == null) // se for null ou seja, algo deu errado em busca o usuario. Algo que nao deveria acontece
                 return BadRequest(new ReturnAuthModel()
                 {
-                    Code = ErrorMSGAuth.ERROR_INTERNO_SISTEMA,
+                    Code = ErrorAuth.ERROR_INTERNO_SISTEMA,
                     Sucesso = false
                 });
             else // senao deu certo vamos retorna o usuario normalmente
@@ -118,7 +118,7 @@ public class AuthController : ControllerBase
         }
         else return BadRequest(new ReturnAuthModel()
         {
-            Code = ErrorMSGAuth.ERROR_INTERNO_SISTEMA,      
+            Code = ErrorAuth.ERROR_INTERNO_SISTEMA,      
             Sucesso = false
         });
     }
