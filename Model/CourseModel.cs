@@ -11,6 +11,7 @@ namespace BackEnd.Model.Course
         public string About { set; get; } = "";
     }
 
+
     public class CourseModel
     {
         public string Id { get; set; } = "";
@@ -26,6 +27,33 @@ namespace BackEnd.Model.Course
         public string[] CompletionBenefits { set; get; } = Array.Empty<string>();
 
     }
+
+    //Conteudo dos cursos
+    public class CourseContentModel()
+    {
+        public string IdCourse { set; get; } = "";
+        public List<ModuleModel> Modules { set; get; } = new();
+    }
+
+    public class ModuleModel
+    {
+        public string IdModule { set; get; } = "";
+        public string Title { set; get; } = "";
+        public string Description { set; get; } = "";
+        public int Order { set; get; }
+        public List<ClassesModel> Classes { set; get; } = new();
+    }
+
+    public class ClassesModel
+    {
+        public string IdClass { set; get; } = "";
+        public string Title { set; get; } = "";
+        public string Description { set; get; } = "";
+        public int DurationInSeconds { set; get; }
+        public int Order { set; get; }
+        public string Video { set; get; } = "";
+    }
+
 
     //retorno das rotas courses
     public class ReturnCourseModel<T>
@@ -91,6 +119,8 @@ namespace BackEnd.Model.Course
     {
         [Column("id")]
         public string Id { set; get; } = "";
+        [Column("title")]
+        public string Title { set; get; } = "";
         [Column("idModule")]
         public string IdModule { set; get; } = "";
         [Column("position")]

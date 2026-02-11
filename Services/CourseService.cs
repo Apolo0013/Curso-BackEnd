@@ -3,6 +3,8 @@ using BackEnd.Data.Context;
 using BackEnd.Model.Auth;
 using BackEnd.Model.Course;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace BackEnd.Service.Course
 {
@@ -15,7 +17,7 @@ namespace BackEnd.Service.Course
             _db = db;
         }
 
-        public async Task<List<CourseModel>> GetAllCourses()
+        public async Task<List<CourseModel>> GetCourseInfomation()
         {
             var Dbcourses = _db.Courses.ToList();
             //coloca para de DbCourse -> CourseModel
@@ -41,6 +43,58 @@ namespace BackEnd.Service.Course
                 }
             ).ToList();
             return courses;
+        }
+
+        public async Task<List<CourseContentModel>> GetCourseContent(string idUser)
+        //aqui ele vai busca 
+        {
+            //pegando os cursos que o usuario "comprou"
+            var userCourses = await _db.UserCourses.Where(info => info.IdUser == idUser).ToListAsync();
+            //lista dos cursos
+            var listCourses = new List<CourseContentModel>();
+            foreach (var iCourse in userCourses)
+            {
+                var idCourse = iCourse.IdCourse; // id do cursos
+                //lista dos modulos
+                var listModule = new List<ModuleModel>();
+                //Filtrando os modulo de acordo com id do curso.
+                var modules = await _db.Modules.Where(x => x.IdCourse == idCourse).ToListAsync();
+                //temos os modulos do cursos, agora vamos pecorrer essa lista para add na lista que sera retorna
+                foreach (var iModule in modules)
+                {
+                    //pegando as aulas/classes
+                    var classes = await _db.Classes
+                        .Where(x => x.IdModule == iModule.Id)
+                        .Select(x => new ClassesModel()
+                        {
+                            IdClass = x.Id,
+                            Title = x.Title,
+                            Description = x.Description,
+                            DurationInSeconds = x.DurationInSeconds,
+                            Video = x.Video,
+                            Order = x.Position
+                        })
+                        .ToListAsync();
+                    //Add na lista
+                    listModule.Add(new()
+                    {
+                        IdModule = iModule.Title,
+                        Title = iModule.Title,
+                        Description = iModule.Description,
+                        Order = iModule.Position,
+                        Classes = classes
+                    });
+                }
+                //add na lista dos cursos
+                listCourses.Add(new()
+                {
+                    IdCourse = idCourse,
+                    Modules = listModule
+                });
+                //limpando a lista de modulos para os proximos modulo, de outro cursos
+                listModule = new();
+            }
+            return listCourses;
         }
 
         public async Task<CourseModel?> GetCourseID(string id)
