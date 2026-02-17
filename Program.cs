@@ -10,8 +10,6 @@ using BackEnd.Service.Course;
 //Repositorie / Data
 using BackEnd.Data.Context;
 using Microsoft.EntityFrameworkCore;
-//Profiles
-using BackEnd.Profiles;
 
 var builder = WebApplication.CreateBuilder(args);
 

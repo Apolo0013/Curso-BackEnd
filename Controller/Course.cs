@@ -6,6 +6,8 @@ using BackEnd.Model.Auth;
 //Mensagem/Common
 using BackEnd.Common.Course.Error;
 using BackEnd.Common.Course.Sucesso;
+using BackEnd.DTO.Course;
+using System.Diagnostics.Eventing.Reader;
 
 [ApiController]
 [Route("course")]
@@ -18,9 +20,22 @@ public class CourseController : ControllerBase
     {
         _service = service;
     }
+    [HttpGet("get/progress")]
+    public async Task<IActionResult> Teste([FromQuery] string idCourse, string idUser)
+    {
+        var data = await _service.GetCourseProgress(idCourse, idUser);
+        return Ok(new APIResponseCourse<List<DbClassesProgress>>()
+        {
+            Data = data,
+            Sucesso = true,
+            Code = ""
+        });
+    }
+
 
     [HttpGet("users/add")]
     //Rota: responsavel por add o curso que o usuario esta fazendo.
+    //ou seja, comprar
     public async Task<IActionResult> AddCoursesUsers([FromQuery] string idUser, [FromQuery] string idCourse)
     {
         await _service.AddCoursesUser(idUser, idCourse);
@@ -31,7 +46,7 @@ public class CourseController : ControllerBase
     public async Task<IActionResult> GetCoursesUsers([FromQuery] string idUser)
     {
         var listsCourses = await _service.GetCoursesUser(idUser);
-        return Ok(listsCourses);
+        return Ok();
     }
 
 
@@ -40,7 +55,7 @@ public class CourseController : ControllerBase
     //Essa rota so vai retorna as informacao sobre o curso, como title, id, descricao, informacao sobre o autor do cursos etc...
     {
         var courses = await _service.GetCourseInfomation();
-        return Ok(new ReturnCourseModel<List<CourseModel>>()
+        return Ok(new APIResponseCourse<List<CourseDTO>>()
         {
             Code = SucessoCourse.SUCESSO_CURSO_ENCONTRADO,
             Sucesso = true,
@@ -52,48 +67,62 @@ public class CourseController : ControllerBase
     public async Task<IActionResult> GetCourseContent([FromQuery] string idUser)
     //Essa rota vai retorna o conteudo em si dos cursos, como modulo e aulas.
     {
-        
+
         var courses = await _service.GetCourseContent(idUser);
         if (courses.Count == 0) // caso esteja vazio
         {
-            return Ok(new ReturnCourseModel<object>()
+            return Ok(new APIResponseCourse<object>()
             {
                 Sucesso = false,
-                Code = "",
+                Code = ErrorCourse.ERROR_NONE_COURSE,
                 Data = null
             });
         }
         //ele tem cursos comprado
         else
         {
-            return Ok(new ReturnCourseModel<List<CourseContentModel>>()
+            return Ok(new APIResponseCourse<List<CourseContentDTO>>()
             {
-                Code = "",
+                Code = SucessoCourse.SUCESSO_COURSES_PURCHASED_FOUND,
                 Sucesso = true,
                 Data = courses
             });
         }
     }
 
-
-
-    [HttpGet("{id}")]
+    [HttpGet("byid/{id}")]
     public async Task<IActionResult> GetCourse(string id)
     {
         var course = await _service.GetCourseID(id); // buscando o curso
         //caso se nulo.
-        if (course == null) return BadRequest(new ReturnCourseModel<object>()
-        {
-            Code = ErrorCourse.ERROR_COURSE_NO_FIND,
-            Sucesso = false
-        });
+        if (course == null)
+            return BadRequest(new APIResponseCourse<object>()
+            {
+                Code = ErrorCourse.ERROR_COURSE_NO_FIND,
+                Sucesso = false,
+                Data = null
+            });
         else // senao, deu certo
-            return Ok(new ReturnCourseModel<CourseModel>()
+            return Ok(new APIResponseCourse<CourseDTO>()
             {
                 Code = SucessoCourse.SUCESSO_CURSO_ENCONTRADO,
                 Sucesso = true,
                 Data = course
             });
+    }
+
+    [HttpPost("completedclasse")]
+    public async Task<IActionResult> CompletedCourse([FromBody] BodyCompletedClass body)
+    {
+        //Add
+        await _service.CompletedClass(body);
+        //Retornando sucesso.
+        return Ok(new APIResponseCourse<object>()
+        {
+            Code = "",
+            Sucesso = false,
+            Data = null
+        });
     }
 }
 

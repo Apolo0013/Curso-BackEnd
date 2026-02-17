@@ -20,6 +20,9 @@ public class AppDbContext : DbContext
     public DbSet<DbModules> Modules => Set<DbModules>();
     //Aulas / classes
     public DbSet<DbClasses> Classes => Set<DbClasses>();
+    //Progresso dos cursos
+    //aulas/classes
+    public DbSet<DbClassesProgress> ClassesProgress => Set<DbClassesProgress>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
