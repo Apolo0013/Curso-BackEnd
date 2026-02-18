@@ -79,7 +79,7 @@ namespace BackEnd.Service.Course
                     //Add na lista
                     listModule.Add(new()
                     {
-                        IdModule = iModule.Title,
+                        IdModule = iModule.Id,
                         Title = iModule.Title,
                         Description = iModule.Description,
                         Order = iModule.Position,
@@ -180,13 +180,10 @@ namespace BackEnd.Service.Course
         public async Task<List<DbClassesProgress>> GetCourseProgress(string idCourse, string idUser)
         {
             var dataProgress = await _db.ClassesProgress.ToListAsync();
-            Console.WriteLine(JsonSerializer.Serialize(dataProgress.Select(x => x.IdCourse)));
-            Console.WriteLine(dataProgress.Any(x => x.IdCourse == idCourse));
-            Console.WriteLine(dataProgress.Any(x => x.IdUser == idUser));
             return dataProgress.Where(x => x.IdCourse == idCourse && x.IdUser == idUser).ToList();
         }
     
-        public async Task CompletedClass(BodyCompletedClass body)
+        public async Task<bool> CompletedClass(BodyCompletedClass body)
         // EXPLICACAO: Aqui vamos receber aula que ele "completou", ele ja tem essa aula, ele pode assistir, etc, mas quando ele fala que "assistiu" vamos liberar a proxima aula
         //EX: Usuario contem aula 1. *Por padrao ao comprar o curso, a primeira aula sera liberar para assistir
         // Em aula 1 ele vai aperta o botao de "marca como concluida". A parti disso, vamos ver qual é proxima aula a se liberar pelo order/position.
@@ -194,29 +191,86 @@ namespace BackEnd.Service.Course
         {
             //Add a aula "concluida"
             var classes = await _db.Classes.ToListAsync();
-            var FirstClasses = classes.FirstOrDefault(x => x.Id == body.IdClass);
-            if (FirstClasses == null) return;
+            //Modulos
+            var modules = await _db.Modules.ToListAsync();
+            //Pegando o class que ele completou
+            var FirstClass = classes.FirstOrDefault(x => x.Id == body.IdClass);
+            if (FirstClass == null) return false;
+            //total de aulas
+            var totalClass = classes.Where(x => x.IdModule == body.IdModule).ToList().Count + 1;
             //proximo position/order
-            var nextPosition = FirstClasses.Position + 1;
-            //Agora vamos pegar o nextPosition pegar a class conrespondente
-            //*Aqui preciso que position seja igual ao nextPosition e IdModule seja o mesmo que foi fornecido.
-            var FirstclasseTarget = classes
-            .FirstOrDefault(
-                x => x.Position == nextPosition 
-                && x.IdModule == body.IdModule
-            );
-            //caso seja null
-            if (FirstclasseTarget == null) return;
-            await _db.AddAsync(new DbClassesProgress()
+            var nextClassPosition = FirstClass.Position + 1;
+            //Ja pode passa pro proximo modulo?
+            bool isNextModule = nextClassPosition >= totalClass;
+            //O curso ja esta completo?
+            // - Curso so esta completo quando o usuario marca como "concluida" todas as aulas
+            var classesCompleted = await _db.ClassesProgress.ToListAsync();
+            //Total de aulas prensente no curso
+            var idsModules = modules.Where(x => x.IdCourse == body.IdCourse);
+            int totalOfClassesInCourse = classes.
+                Where(x => idsModules.Any(idm => idm.Id == x.IdModule))
+                .ToList().Count;
+            bool isCourseCompleted = classesCompleted
+                    .Count(x => x.IdCourse == body.IdCourse) == totalOfClassesInCourse;
+            Console.WriteLine(isCourseCompleted ? "Completo" : "nao completo");
+            if (isNextModule)
+            //Ja esta pronto para ir para o proximo modulo
             {
-                Id = Guid.NewGuid().ToString(),
-                IdClass = FirstclasseTarget.Id,
-                IdModule = FirstclasseTarget.IdModule,
-                IdCourse = body.IdCourse,
-                IdUser = body.IdUser
-            });
-            //salvando no bnaco
-            await _db.SaveChangesAsync();
+                //Modulos do curso
+                var modulesOfCourse = modules.Where(x => x.IdCourse == body.IdCourse);
+                //Modulo atual
+                var FirstCurrentModule = modulesOfCourse.FirstOrDefault(x => x.Id == body.IdModule);
+                if (FirstCurrentModule == null) return false;
+                //Proximo position modulo
+                int nextModulePosition = FirstCurrentModule.Position + 1;
+                //pegando o proximo modulo
+                var FirstModuleNext = modulesOfCourse.FirstOrDefault(x => x.Position == nextModulePosition);
+                if (FirstModuleNext == null) return false;
+                //pegando o id da proxima class/aula
+                var FirstclasseNext = classes.FirstOrDefault(x => x.Position == 1 && x.IdModule == FirstModuleNext.Id);
+                if (FirstclasseNext == null) return false;
+                //agora vamos add a aula desse novo modulo
+                await _db.AddAsync(new DbClassesProgress()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    IdModule = FirstModuleNext.Id,
+                    IdCourse = FirstModuleNext.IdCourse,
+                    IdUser = body.IdUser,
+                    IdClass = FirstclasseNext.Id
+                });
+                //salvando a altereacao no banco
+                await _db.SaveChangesAsync();
+                return true;
+            }
+            else if (isCourseCompleted)
+            {
+                return false;
+            }
+            else
+            {
+                //Agora vamos pegar o nextPosition pegar a class conrespondente
+                //*Aqui preciso que position seja igual ao nextPosition e IdModule seja o mesmo que foi fornecido.
+                var FirstclasseNext = classes
+                .FirstOrDefault(
+                    x => x.Position == nextClassPosition
+                    && x.IdModule == body.IdModule
+                );
+                //caso seja null
+                if (FirstclasseNext == null) return false;
+                Console.WriteLine(JsonSerializer.Serialize(FirstclasseNext));
+                await _db.AddAsync(new DbClassesProgress()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    IdClass = FirstclasseNext.Id,
+                    IdModule = FirstclasseNext.IdModule,
+                    IdCourse = body.IdCourse,
+                    IdUser = body.IdUser
+                });
+                //salvando alteracao no banco
+                await _db.SaveChangesAsync();
+                Console.WriteLine("DEU CERTO");
+                return true;
+            }
         }
     }
 }

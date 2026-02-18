@@ -8,6 +8,7 @@ using BackEnd.Common.Course.Error;
 using BackEnd.Common.Course.Sucesso;
 using BackEnd.DTO.Course;
 using System.Diagnostics.Eventing.Reader;
+using System.Text.Json;
 
 [ApiController]
 [Route("course")]
@@ -31,7 +32,6 @@ public class CourseController : ControllerBase
             Code = ""
         });
     }
-
 
     [HttpGet("users/add")]
     //Rota: responsavel por add o curso que o usuario esta fazendo.
@@ -120,7 +120,7 @@ public class CourseController : ControllerBase
         return Ok(new APIResponseCourse<object>()
         {
             Code = "",
-            Sucesso = false,
+            Sucesso = true,
             Data = null
         });
     }
