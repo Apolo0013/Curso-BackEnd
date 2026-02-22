@@ -23,7 +23,8 @@ public class AppDbContext : DbContext
     //Progresso dos cursos
     //aulas/classes
     public DbSet<DbClassesProgress> ClassesProgress => Set<DbClassesProgress>();
-
+    //Cursos
+    public DbSet<DbCoursesCompleted> CoursesProgress => Set<DbCoursesCompleted>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,4 +41,5 @@ public class AppDbContext : DbContext
                 .ValueGeneratedOnAdd();
         });
     }
+    
 }

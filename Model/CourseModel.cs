@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace BackEnd.Model.Course
 {
-    public record BodyCompletedClass (
+    public record BodyCompletedClass(
         string IdUser,
         string IdCourse,
         string IdModule,
@@ -79,7 +79,7 @@ namespace BackEnd.Model.Course
         [Column("video")]
         public string Video { set; get; } = "";
     }
-    
+
     //Progresso...
     //Progressos das aulas
     [Table("users_completed_classes")]
@@ -96,5 +96,21 @@ namespace BackEnd.Model.Course
         public string IdModule { set; get; } = "";
         [Column("idClass")]
         public string IdClass { set; get; } = "";
+        [Column("position")]
+        public int Position { set; get; }
+    }
+
+    //progressos dos cursos
+    //*Aqui vai fica os cursos ja concluidos
+    [Table("users_completed_courses")]
+    public class DbCoursesCompleted
+    {
+        [Key]
+        [Column("id")]
+        public string Id { set; get; } = Guid.NewGuid().ToString();
+        [Column("idUser")]
+        public string IdUser { set; get; } = "";
+        [Column("idCourse")]
+        public string IdCourse { set; get; } = "";
     }
 }

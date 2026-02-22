@@ -21,15 +21,27 @@ public class CourseController : ControllerBase
     {
         _service = service;
     }
-    [HttpGet("get/progress")]
-    public async Task<IActionResult> Teste([FromQuery] string idCourse, string idUser)
+    [HttpGet("get/class/progress")]
+    public async Task<IActionResult> GetClassesProgress([FromQuery] string idCourse, string idUser)
     {
-        var data = await _service.GetCourseProgress(idCourse, idUser);
+        var data = await _service.GetClassesProgress(idCourse, idUser);
         return Ok(new APIResponseCourse<List<DbClassesProgress>>()
         {
             Data = data,
             Sucesso = true,
             Code = ""
+        });
+    }
+
+    [HttpGet("get/course/completed")]
+    public async Task<IActionResult> GetCoursesProgress([FromQuery] string idUser)
+    {
+        var data = await _service.GetCoursesProgress(idUser);
+        return Ok(new APIResponseCourse<List<DbCoursesCompleted>>()
+        {
+            Code = "",
+            Data = data,
+            Sucesso = true
         });
     }
 
@@ -113,6 +125,7 @@ public class CourseController : ControllerBase
 
     [HttpPost("completedclasse")]
     public async Task<IActionResult> CompletedCourse([FromBody] BodyCompletedClass body)
+    //Aqui vamos receber a aula que o mesmo completou.
     {
         //Add
         await _service.CompletedClass(body);
